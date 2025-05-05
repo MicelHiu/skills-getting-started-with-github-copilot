@@ -4,6 +4,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
 
+  // Function to fetch participants for a specific activity
+  async function fetchParticipants(activityName) {
+    try {
+      const response = await fetch(
+        `/activities/${encodeURIComponent(activityName)}/participants`
+      );
+      const data = await response.json();
+      return data.participants;
+    } catch (error) {
+      console.error(`Error fetching participants for ${activityName}:`, error);
+      return [];
+    }
+  }
+
   // Function to fetch activities from API
   async function fetchActivities() {
     try {
@@ -14,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
       activitiesList.innerHTML = "";
 
       // Populate activities list
-      Object.entries(activities).forEach(([name, details]) => {
+      for (const [name, details] of Object.entries(activities)) {
         const activityCard = document.createElement("div");
         activityCard.className = "activity-card";
 
@@ -25,7 +39,20 @@ document.addEventListener("DOMContentLoaded", () => {
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          <div class="participants-section">
+            <h5>Participants:</h5>
+            <ul class="participants-list"></ul>
+          </div>
         `;
+
+        // Fetch and populate participants
+        const participantsList = activityCard.querySelector(".participants-list");
+        const participants = await fetchParticipants(name);
+        participants.forEach((participant) => {
+          const listItem = document.createElement("li");
+          listItem.textContent = participant;
+          participantsList.appendChild(listItem);
+        });
 
         activitiesList.appendChild(activityCard);
 
@@ -34,7 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
         option.value = name;
         option.textContent = name;
         activitySelect.appendChild(option);
-      });
+      }
     } catch (error) {
       activitiesList.innerHTML = "<p>Failed to load activities. Please try again later.</p>";
       console.error("Error fetching activities:", error);
